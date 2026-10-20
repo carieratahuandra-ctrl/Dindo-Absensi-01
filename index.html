@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Absen Ceria IFP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: #f0fdf4;
+            user-select: none; /* Prevent text selection on touch screens */
+            overflow: hidden; /* Prevent scrolling on main app container */
+        }
+        .app-container {
+            width: 100vw;
+            height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        /* Custom Scrollbar for better UI on large screens */
+        ::-webkit-scrollbar { width: 12px; }
+        ::-webkit-scrollbar-track { background: #e0f2fe; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #2563eb; }
+
+        .screen { display: none; min-height: 100vh; }
+        .screen.active { display: flex; flex-direction: column; }
+        
+        .btn-bounce { transition: transform 0.1s ease, box-shadow 0.1s ease; }
+        .btn-bounce:active { transform: scale(0.95); box-shadow: 0 0px 0px rgba(0,0,0,0.2); }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .student-card {
+            transition: all 0.2s ease-in-out;
+        }
+        .student-card:active {
+            transform: scale(0.95);
+        }
+        
+        /* Floating animation for illustrations */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .floating { animation: float 3s ease-in-out infinite; }
+
+        #toast-container {
+            position: fixed; top: 20px; right: 20px; z-index: 9999;
+        }
+        .toast {
+            min-width: 300px; padding: 16px 24px; margin-bottom: 10px;
+            border-radius: 12px; color: white; font-weight: bold; font-size: 1.2rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            animation: slideInRight 0.3s ease-out forwards;
+        }
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+        /* Disable image dragging */
+        img { -webkit-user-drag: none; }
+    </style>
+</head>
+<body class="text-slate-800">
+    <div id="toast-container"></div>
+
+    <div class="app-container">
+        
+        <!-- SCREEN: HOME -->
+        <div id="screen-home" class="screen active relative bg-gradient-to-br from-green-100 via-blue-50 to-yellow-50 p-6 sm:p-10">
+            <!-- Fullscreen Toggle -->
+            <button onclick="toggleFullScreen()" class="absolute top-6 left-6 bg-white p-4 rounded-full shadow-md text-blue-600 hover:bg-blue-50 btn-bounce z-10">
+                <i class="fas fa-expand text-2xl"></i>
+            </button>
+            
+            <!-- Local Storage Indicator -->
+            <div class="absolute top-6 right-6 bg-white/80 px-4 py-2 rounded-full shadow-sm text-green-600 font-bold flex items-center gap-2 z-10">
+                <i class="fas fa-database"></i> Penyimpanan Lokal Aktif
+            </div>
+
+            <div class="flex-1 flex flex-col items-center justify-center max-w-6xl mx-auto w-full relative">
+                <h1 class="text-6xl sm:text-7xl font-extrabold text-blue-600 mb-2 drop-shadow-sm text-center">ABSEN CERIA IFP</h1>
+                <h2 class="text-3xl sm:text-4xl font-bold text-green-500 mb-8 text-center">"Ayo Absen, Aku Hadir Hari Ini!"</h2>
+                
+                <h3 id="display-school-name" class="text-2xl font-bold text-slate-600 mb-6 bg-white px-8 py-3 rounded-full shadow-sm border-2 border-slate-100">SD Negeri 1 Contoh</h3>
+
+                <!-- Clock & Date Widget -->
+                <div class="glass-panel rounded-3xl p-6 sm:p-8 mb-10 shadow-xl w-full max-w-3xl flex flex-col sm:flex-row items-center justify-between gap-6 border-4 border-white">
+                    <div class="text-center sm:text-left">
+                        <div id="clock-time" class="text-6xl sm:text-7xl font-extrabold text-blue-700 tracking-tight">00:00</div>
+                        <div id="clock-date" class="text-xl sm:text-2xl font-bold text-slate-500 mt-2">Senin, 1 Januari 2024</div>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="bg-green-100 p-4 rounded-2xl text-center min-w-[120px]">
+                            <div class="text-sm font-bold text-green-700 uppercase">Hadir</div>
+                            <div id="home-stat-present" class="text-4xl font-extrabold text-green-600">0</div>
+                        </div>
+                        <div class="bg-yellow-100 p-4 rounded-2xl text-center min-w-[120px]">
+                            <div class="text-sm font-bold text-yellow-700 uppercase">Belum Absen</div>
+                            <div id="home-stat-unrecorded" class="text-4xl font-extrabold text-yellow-600">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Buttons -->
+                <div class="flex flex-col sm:flex-row gap-6 w-full max-w-4xl justify-center z-10">
+                    <button onclick="startAttendanceFlow()" class="flex-1 bg-gradient-to-b from-green-400 to-green-600 text-white text-3xl sm:text-4xl font-extrabold py-8 px-10 rounded-[2rem] shadow-xl border-b-8 border-green-700 btn-bounce flex items-center justify-center gap-4">
+                        <i class="fas fa-hand-sparkles"></i> MULAI ABSENSI
+                    </button>
+                </div>
+
+                <div class="flex gap-4 mt-8">
+                    <button onclick="showScreen('screen-teacher-pin')" class="bg-white text-blue-600 text-xl font-bold py-4 px-8 rounded-2xl shadow-md border-2 border-blue-100 hover:bg-blue-50 btn-bounce flex items-center gap-2">
+                        <i class="fas fa-chalkboard-teacher"></i> Panel Guru
+                    </button>
+                </div>
+
+                <!-- Credits -->
+                <div class="absolute bottom-4 text-center w-full text-slate-400 font-bold">
+                    Aplikasi oleh Dindo Noto Sastro, S.Pd.
+                </div>
+                
+                <!-- Decorations -->
+                <i class="fas fa-sun text-yellow-400 text-8xl absolute top-10 right-20 floating opacity-50"></i>
+                <i class="fas fa-cloud text-white text-8xl absolute top-32 left-20 floating opacity-70" style="animation-delay: 1s;"></i>
+            </div>
+        </div>
+
+        <!-- SCREEN: STUDENT SELECTION -->
+        <div id="screen-student-selection" class="screen bg-blue-50 p-6 sm:p-10">
+            <div class="max-w-7xl mx-auto w-full">
+                <div class="flex items-center justify-between mb-8">
+                    <button onclick="showScreen('screen-home')" class="bg-white text-slate-600 text-2xl font-bold py-3 px-6 rounded-2xl shadow-sm border-2 border-slate-200 btn-bounce">
+                        <i class="fas fa-arrow-left mr-2"></i> Kembali
+                    </button>
+                    <h2 class="text-4xl font-extrabold text-blue-700">Pilih Namamu!</h2>
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 text-xl"></i>
+                        <input type="text" id="search-student" oninput="filterStudents()" placeholder="Cari nama..." class="pl-12 pr-6 py-4 rounded-full text-xl font-bold border-4 border-blue-200 focus:border-blue-500 focus:outline-none shadow-sm w-64 md:w-80">
+                    </div>
+                </div>
+
+                <div id="student-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 sm:gap-8 pb-20">
+                    <!-- Students will be injected here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN: CONFIRM IDENTITY -->
+        <div id="screen-confirm-identity" class="screen bg-yellow-50 p-6 sm:p-10 justify-center items-center relative">
+            <div class="glass-panel p-10 sm:p-16 rounded-[3rem] shadow-2xl text-center max-w-4xl w-full border-4 border-yellow-200">
+                <div class="w-32 h-32 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6 border-8 border-white shadow-lg">
+                    <i class="fas fa-user text-6xl text-blue-500"></i>
+                </div>
+                <h2 class="text-4xl sm:text-5xl font-extrabold text-slate-700 mb-4">Apakah benar kamu</h2>
+                <h1 id="confirm-name-display" class="text-6xl sm:text-7xl font-extrabold text-blue-600 mb-12 drop-shadow-sm">Nama Siswa</h1>
+                
+                <div class="flex flex-col sm:flex-row justify-center gap-6">
+                    <button onclick="goToMood()" class="flex-1 bg-green-500 text-white text-3xl font-bold py-6 px-10 rounded-3xl shadow-xl border-b-8 border-green-700 btn-bounce">
+                        <i class="fas fa-check-circle mr-2"></i> YA, BENAR
+                    </button>
+                    <button onclick="showScreen('screen-student-selection')" class="flex-1 bg-red-500 text-white text-3xl font-bold py-6 px-10 rounded-3xl shadow-xl border-b-8 border-red-700 btn-bounce">
+                        <i class="fas fa-times-circle mr-2"></i> BUKAN, KEMBALI
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN: MOOD SELECTION -->
+        <div id="screen-mood" class="screen bg-indigo-50 p-6 sm:p-10">
+            <div class="max-w-6xl mx-auto w-full flex flex-col h-full">
+                <div class="text-center mb-10">
+                    <h2 class="text-5xl sm:text-6xl font-extrabold text-indigo-700 mb-4 drop-shadow-sm">Bagaimana perasaanmu hari ini?</h2>
+                    <p class="text-2xl font-bold text-slate-500">Pilih salah satu gambar di bawah ini</p>
+                </div>
+                
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-6 flex-1 content-center">
+                    <!-- Mood Cards -->
+                    <button onclick="selectMood('Sangat senang', '😄', 'bg-yellow-100', 'border-yellow-400')" class="mood-btn bg-white p-8 rounded-3xl shadow-lg border-4 border-transparent hover:border-yellow-400 hover:bg-yellow-50 btn-bounce flex flex-col items-center justify-center gap-4 group">
+                        <div class="text-8xl group-hover:scale-110 transition-transform">😄</div>
+                        <div class="text-2xl font-bold text-slate-700">Sangat senang</div>
+                    </button>
+                    <button onclick="selectMood('Senang', '😊', 'bg-green-100', 'border-green-400')" class="mood-btn bg-white p-8 rounded-3xl shadow-lg border-4 border-transparent hover:border-green-400 hover:bg-green-50 btn-bounce flex flex-col items-center justify-center gap-4 group">
+                        <div class="text-8xl group-hover:scale-110 transition-transform">😊</div>
+                        <div class="text-2xl font-bold text-slate-700">Senang</div>
+                    </button>
+                    <button onclick="selectMood('Biasa saja', '😐', 'bg-blue-100', 'border-blue-400')" class="mood-btn bg-white p-8 rounded-3xl shadow-lg border-4 border-transparent hover:border-blue-400 hover:bg-blue-50 btn-bounce flex flex-col items-center justify-center gap-4 group">
+                        <div class="text-8xl group-hover:scale-110 transition-transform">😐</div>
+                        <div class="text-2xl font-bold text-slate-700">Biasa saja</div>
+                    </button>
+                    <button onclick="selectMood('Sedih', '😢', 'bg-blue-200', 'border-blue-500')" class="mood-btn bg-white p-8 rounded-3xl shadow-lg border-4 border-transparent hover:border-blue-500 hover:bg-blue-100 btn-bounce flex flex-col items-center justify-center gap-4 group">
+                        <div class="text-8xl group-hover:scale-110 transition-transform">😢</div>
+                        <div class="text-2xl font-bold text-slate-700">Sedih</div>
+                    </button>
+                    <button onclick="selectMood('Cemas atau khawatir', '😟', 'bg-orange-100', 'border-orange-400')" class="mood-btn bg-white p-8 rounded-3xl shadow-lg border-4 border-transparent hover:border-orange-400 hover:bg-orange-50 btn-bounce flex flex-col items-center justify-center gap-4 group">
+                        <div class="text-8xl group-hover:scale-110 transition-transform">😟</div>
+                        <div class="text-2xl font-bold text-slate-700">Cemas / Khawatir</div>
+                    </button>
+                    <button onclick="selectMood('Kesal atau marah', '😡', 'bg-red-100', 'border-red-400')" class="mood-btn bg-white p-8 rounded-3xl shadow-lg border-4 border-transparent hover:border-red-400 hover:bg-red-50 btn-bounce flex flex-col items-center justify-center gap-4 group">
+                        <div class="text-8xl group-hover:scale-110 transition-transform">😡</div>
+                        <div class="text-2xl font-bold text-slate-700">Kesal / Marah</div>
+                    </button>
+                </div>
+
+                <div class="flex justify-between mt-10">
+                    <button onclick="showScreen('screen-confirm-identity')" class="bg-white text-slate-600 text-2xl font-bold py-4 px-8 rounded-2xl shadow-md border-2 border-slate-200 btn-bounce">
+                        <i class="fas fa-arrow-left mr-2"></i> Kembali
+                    </button>
+                    <button onclick="selectMood('Lewati', '', 'bg-gray-100', 'border-gray-300')" class="bg-slate-200 text-slate-600 text-2xl font-bold py-4 px-8 rounded-2xl shadow-md border-2 border-slate-300 hover:bg-slate-300 btn-bounce">
+                        Lewati Pertanyaan <i class="fas fa-forward ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN: FINAL CONFIRMATION -->
+        <div id="screen-final-confirm" class="screen bg-green-50 p-6 sm:p-10 justify-center items-center">
+            <div class="glass-panel p-10 sm:p-16 rounded-[3rem] shadow-2xl text-center max-w-4xl w-full border-4 border-green-200">
+                <h2 class="text-3xl font-bold text-slate-500 mb-2">Ringkasan Absensi</h2>
+                <h1 id="final-name" class="text-5xl font-extrabold text-blue-700 mb-8">Nama Siswa</h1>
+                
+                <div id="final-mood-container" class="bg-white p-6 rounded-3xl inline-block shadow-md border-2 border-slate-100 mb-12">
+                    <div id="final-mood-emoji" class="text-6xl mb-2">😄</div>
+                    <div id="final-mood-text" class="text-xl font-bold text-slate-600">Sangat senang</div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row justify-center gap-6">
+                    <button onclick="submitAttendance()" class="flex-1 bg-blue-500 text-white text-3xl font-bold py-6 px-10 rounded-3xl shadow-xl border-b-8 border-blue-700 btn-bounce">
+                        <i class="fas fa-save mr-2"></i> KONFIRMASI ABSEN
+                    </button>
+                    <button onclick="showScreen('screen-mood')" class="flex-1 bg-white text-slate-600 border-4 border-slate-200 text-3xl font-bold py-6 px-10 rounded-3xl shadow-md btn-bounce">
+                        KEMBALI
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN: SUCCESS -->
+        <div id="screen-success" class="screen bg-green-400 p-6 justify-center items-center">
+            <div class="text-center text-white floating">
+                <i class="fas fa-check-circle text-9xl mb-8 drop-shadow-lg"></i>
+                <h1 class="text-6xl sm:text-8xl font-extrabold mb-6 drop-shadow-md">Yeay!</h1>
+                <h2 class="text-4xl sm:text-5xl font-bold mb-4 drop-shadow-md">Absensimu berhasil!</h2>
+                <p class="text-2xl font-semibold opacity-90">Terima kasih sudah berbagi perasaan hari ini.</p>
+            </div>
+        </div>
+
+        <!-- SCREEN: TEACHER PIN -->
+        <div id="screen-teacher-pin" class="screen bg-slate-800 p-6 justify-center items-center">
+            <div class="bg-white p-10 rounded-[2rem] shadow-2xl text-center max-w-md w-full">
+                <i class="fas fa-lock text-5xl text-blue-500 mb-4"></i>
+                <h2 class="text-3xl font-bold text-slate-700 mb-2">Panel Guru</h2>
+                <p class="text-slate-500 mb-8 font-semibold">Masukkan PIN untuk mengakses panel. <br><span class="text-sm">(PIN Default: 1234)</span></p>
+                
+                <input type="password" id="teacher-pin-input" class="w-full text-center text-4xl tracking-[1em] font-bold py-4 border-b-4 border-slate-300 focus:border-blue-500 focus:outline-none mb-8" maxlength="4" placeholder="••••">
+                
+                <div class="flex gap-4">
+                    <button onclick="verifyPin()" class="flex-1 bg-blue-600 text-white text-xl font-bold py-4 rounded-xl shadow-md btn-bounce">MASUK</button>
+                    <button onclick="showScreen('screen-home')" class="bg-slate-200 text-slate-600 text-xl font-bold py-4 px-6 rounded-xl shadow-md btn-bounce">BATAL</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN: TEACHER DASHBOARD -->
+        <div id="screen-teacher-dashboard" class="screen bg-slate-50 min-h-screen">
+            <!-- Header -->
+            <div class="bg-blue-600 text-white p-6 shadow-md flex justify-between items-center sticky top-0 z-20">
+                <div class="flex items-center gap-4">
+                    <button onclick="showScreen('screen-home')" class="bg-white/20 hover:bg-white/30 p-3 rounded-xl transition">
+                        <i class="fas fa-arrow-left text-xl"></i>
+                    </button>
+                    <h1 class="text-2xl font-bold">Panel Guru: Rekap & Pengaturan</h1>
+                </div>
+                <div class="font-bold bg-white/20 px-4 py-2 rounded-lg">
+                    Tanggal: <span id="dashboard-date-display"></span>
+                </div>
+            </div>
+
+            <div class="max-w-7xl mx-auto p-6 flex flex-col lg:flex-row gap-6">
+                <!-- Sidebar Nav -->
+                <div class="w-full lg:w-64 flex flex-col gap-2">
+                    <button onclick="switchTab('tab-rekap')" id="btn-tab-rekap" class="teacher-tab-btn active w-full text-left px-6 py-4 rounded-xl font-bold text-lg bg-white shadow-sm border-l-4 border-blue-500 text-blue-600 transition">
+                        <i class="fas fa-chart-pie w-8"></i> Rekap Harian
+                    </button>
+                    <button onclick="switchTab('tab-students')" id="btn-tab-students" class="teacher-tab-btn w-full text-left px-6 py-4 rounded-xl font-bold text-lg bg-white shadow-sm border-l-4 border-transparent text-slate-600 hover:bg-slate-100 transition">
+                        <i class="fas fa-users w-8"></i> Kelola Kehadiran
+                    </button>
+                    <button onclick="switchTab('tab-settings')" id="btn-tab-settings" class="teacher-tab-btn w-full text-left px-6 py-4 rounded-xl font-bold text-lg bg-white shadow-sm border-l-4 border-transparent text-slate-600 hover:bg-slate-100 transition">
+                        <i class="fas fa-cog w-8"></i> Pengaturan & Data
+                    </button>
+                </div>
+
+                <!-- Main Content Area -->
+                <div class="flex-1 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 min-h-[70vh]">
+                    
+                    <!-- TAB: REKAP -->
+                    <div id="tab-rekap" class="teacher-tab-content block">
+                        <h2 class="text-2xl font-bold mb-6 text-slate-700">Ringkasan Hari Ini</h2>
+                        
+                        <!-- Stats Grid -->
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                                <div class="text-sm font-bold text-blue-600 uppercase mb-1">Total Siswa</div>
+                                <div id="stat-total" class="text-3xl font-extrabold text-blue-800">18</div>
+                            </div>
+                            <div class="bg-green-50 p-4 rounded-xl border border-green-100">
+                                <div class="text-sm font-bold text-green-600 uppercase mb-1">Hadir</div>
+                                <div id="stat-hadir" class="text-3xl font-extrabold text-green-800">0</div>
+                            </div>
+                            <div class="bg-yellow-50 p-4 rounded-xl border border-yellow-100">
+                                <div class="text-sm font-bold text-yellow-600 uppercase mb-1">Izin / Sakit</div>
+                                <div id="stat-izinsakit" class="text-3xl font-extrabold text-yellow-800">0</div>
+                            </div>
+                            <div class="bg-red-50 p-4 rounded-xl border border-red-100">
+                                <div class="text-sm font-bold text-red-600 uppercase mb-1">Alpa</div>
+                                <div id="stat-alpa" class="text-3xl font-extrabold text-red-800">0</div>
+                            </div>
+                        </div>
+
+                        <h2 class="text-2xl font-bold mb-4 text-slate-700">Ringkasan Suasana Hati</h2>
+                        <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                            <div id="mood-stats-container" class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                <!-- Mood stats injected here -->
+                            </div>
+                            <p class="text-sm text-slate-400 mt-4 italic">*Hanya menampilkan agregat anonim untuk menjaga privasi perasaan individual siswa secara terbuka.</p>
+                        </div>
+                    </div>
+
+                    <!-- TAB: KELOLA KEHADIRAN -->
+                    <div id="tab-students" class="teacher-tab-content hidden">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-2xl font-bold text-slate-700">Daftar Kehadiran Siswa</h2>
+                            <button onclick="downloadCSV()" class="bg-green-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-700 flex items-center gap-2">
+                                <i class="fas fa-file-csv"></i> Unduh CSV
+                            </button>
+                        </div>
+                        
+                        <div class="overflow-x-auto rounded-xl border border-slate-200">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-100 text-slate-600 uppercase text-sm font-bold">
+                                        <th class="p-4 border-b border-slate-200 w-16 text-center">No</th>
+                                        <th class="p-4 border-b border-slate-200">Nama Siswa</th>
+                                        <th class="p-4 border-b border-slate-200 w-48">Status Kehadiran</th>
+                                        <th class="p-4 border-b border-slate-200 w-32">Waktu</th>
+                                        <th class="p-4 border-b border-slate-200 w-32 text-center">Aksi Guru</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="teacher-student-list" class="divide-y divide-slate-100">
+                                    <!-- Injected via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- TAB: PENGATURAN -->
+                    <div id="tab-settings" class="teacher-tab-content hidden">
+                        <h2 class="text-2xl font-bold mb-6 text-slate-700">Pengaturan Aplikasi</h2>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <!-- Basic Settings -->
+                            <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                                <h3 class="text-lg font-bold mb-4 border-b pb-2">Profil Sekolah</h3>
+                                <label class="block font-bold text-slate-600 mb-2">Nama Sekolah / Kelas</label>
+                                <input type="text" id="setting-school-name" class="w-full p-3 rounded-lg border-2 border-slate-300 font-bold mb-4 focus:border-blue-500 outline-none">
+                                
+                                <label class="block font-bold text-slate-600 mb-2">PIN Guru Baru (4 Digit)</label>
+                                <input type="password" id="setting-pin" class="w-full p-3 rounded-lg border-2 border-slate-300 font-bold mb-4 focus:border-blue-500 outline-none" maxlength="4">
+                                
+                                <button onclick="saveSettings()" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 w-full shadow-sm">
+                                    Simpan Pengaturan
+                                </button>
+                            </div>
+
+                            <!-- Data Management -->
+                            <div class="bg-orange-50 p-6 rounded-xl border border-orange-200">
+                                <h3 class="text-lg font-bold mb-4 border-b border-orange-200 pb-2 text-orange-800">Manajemen Data (Backup/Restore)</h3>
+                                <p class="text-sm text-slate-600 mb-4">Karena menggunakan penyimpanan lokal, pastikan Anda mencadangkan data secara berkala untuk menghindari kehilangan data jika cache browser terhapus.</p>
+                                
+                                <div class="flex flex-col gap-3">
+                                    <button onclick="exportJSON()" class="bg-orange-600 text-white px-4 py-3 rounded-lg font-bold hover:bg-orange-700 shadow-sm flex justify-center items-center gap-2">
+                                        <i class="fas fa-download"></i> Cadangkan Data (Export JSON)
+                                    </button>
+                                    
+                                    <div class="relative overflow-hidden">
+                                        <button class="w-full bg-slate-600 text-white px-4 py-3 rounded-lg font-bold hover:bg-slate-700 shadow-sm flex justify-center items-center gap-2">
+                                            <i class="fas fa-upload"></i> Pulihkan Data (Import JSON)
+                                        </button>
+                                        <input type="file" id="import-json-input" accept=".json" onchange="importJSON(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                                    </div>
+                                    
+                                    <button onclick="resetTodayData()" class="mt-4 border-2 border-red-500 text-red-600 px-4 py-3 rounded-lg font-bold hover:bg-red-50 shadow-sm flex justify-center items-center gap-2">
+                                        <i class="fas fa-trash"></i> Reset Data Hari Ini
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Status Modal -->
+        <div id="modal-edit-status" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+            <div class="bg-white p-8 rounded-2xl max-w-sm w-full shadow-2xl">
+                <h3 class="text-xl font-bold mb-4">Ubah Status Kehadiran</h3>
+                <p id="edit-modal-student-name" class="font-bold text-blue-600 text-lg mb-4">Nama Siswa</p>
+                <select id="edit-modal-status-select" class="w-full p-4 border-2 border-slate-300 rounded-xl font-bold text-lg mb-6">
+                    <option value="Hadir">Hadir</option>
+                    <option value="Sakit">Sakit</option>
+                    <option value="Izin">Izin</option>
+                    <option value="Alpa">Alpa</option>
+                    <option value="">Belum Absen (Hapus Data)</option>
+                </select>
+                <div class="flex gap-4">
+                    <button onclick="saveEditStatus()" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold">Simpan</button>
+                    <button onclick="closeEditModal()" class="flex-1 bg-slate-200 text-slate-700 py-3 rounded-xl font-bold">Batal</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- CONSTANTS & INITIAL DATA ---
+        const DB_NAME = 'AbsenCeriaDB';
+        const DB_VERSION = 1;
+        const INITIAL_STUDENTS = [
+            { id: "std_01", no: "01", name: "Alifia" },
+            { id: "std_02", no: "02", name: "Almira" },
+            { id: "std_03", no: "03", name: "Arsy" },
+            { id: "std_04", no: "04", name: "Arvi" },
+            { id: "std_05", no: "05", name: "Arya" },
+            { id: "std_06", no: "06", name: "Bila" },
+            { id: "std_07", no: "07", name: "Devano" },
+            { id: "std_08", no: "08", name: "Garcy" },
+            { id: "std_09", no: "09", name: "Nabila" },
+            { id: "std_10", no: "10", name: "Nanda" },
+            { id: "std_11", no: "11", name: "Narendra" },
+            { id: "std_12", no: "12", name: "Nesy" },
+            { id: "std_13", no: "13", name: "Queen" },
+            { id: "std_14", no: "14", name: "Raihan" },
+            { id: "std_15", no: "15", name: "Rasyid" },
+            { id: "std_16", no: "16", name: "Tasya" },
+            { id: "std_17", no: "17", name: "Wiwi" },
+            { id: "std_18", no: "18", name: "Zahir" }
+        ];
+
+        const MOOD_DATA = {
+            'Sangat senang': '😄',
+            'Senang': '😊',
+            'Biasa saja': '😐',
+            'Sedih': '😢',
+            'Cemas atau khawatir': '😟',
+            'Kesal atau marah': '😡',
+            'Lewati': '➖'
+        };
+
+        // --- STATE ---
+        let db;
+        let todayStr = getTodayDateString();
+        let currentTempStudent = null;
+        let currentTempMood = null;
+        let allStudents = [];
+        let todayAttendance = [];
+        let settings = { schoolName: 'SD Negeri Widarapayung Wetan 02', pin: '1234' };
+        let editModalStudentId = null;
+
+        // --- HELPER FUNCTIONS ---
+        function getTodayDateString() {
+            const now = new Date();
+            // Local timezone string YYYY-MM-DD
+            return now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+        }
+
+        function formatTime(date) {
+            return String(date.getHours()).padStart(2, '0') + ':' + String(date.getMinutes()).padStart(2, '0');
+        }
+
+        function formatDateFullIndo(date) {
+            const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+        }
+
+        function showToast(message, isError = false) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${isError ? 'bg-red-500' : 'bg-green-500'}`;
+            toast.innerHTML = `<i class="fas ${isError ? 'fa-exclamation-circle' : 'fa-check-circle'} mr-2"></i> ${message}`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s ease forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    showToast(`Gagal fullscreen: ${err.message}`, true);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            
+            if(screenId === 'screen-home') updateHomeStats();
+            if(screenId === 'screen-student-selection') renderStudentGrid();
+            if(screenId === 'screen-teacher-dashboard') renderTeacherDashboard();
+        }
+
+        // --- INDEXED DB LOGIC ---
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                
+                request.onerror = (e) => reject("Database error: " + e.target.errorCode);
+                
+                request.onupgradeneeded = (e) => {
+                    const database = e.target.result;
+                    // Students Store
+                    if (!database.objectStoreNames.contains('students')) {
+                        database.createObjectStore('students', { keyPath: 'id' });
+                    }
+                    // Attendance Store: ID is date_studentId
+                    if (!database.objectStoreNames.contains('attendance')) {
+                        const attStore = database.createObjectStore('attendance', { keyPath: 'id' });
+                        attStore.createIndex('date', 'date', { unique: false });
+                        attStore.createIndex('studentId', 'studentId', { unique: false });
+                    }
+                    // Settings Store
+                    if (!database.objectStoreNames.contains('settings')) {
+                        database.createObjectStore('settings', { keyPath: 'key' });
+                    }
+                };
+
+                request.onsuccess = async (e) => {
+                    db = e.target.result;
+                    await seedInitialData();
+                    await loadSettings();
+                    await loadAllData();
+                    resolve();
+                };
+            });
+        }
+
+        function runTransaction(storeName, mode, callback) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([storeName], mode);
+                const store = transaction.objectStore(storeName);
+                const request = callback(store);
+                
+                if (request) {
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = (e) => reject(e.target.error);
+                } else {
+                    transaction.oncomplete = () => resolve();
+                    transaction.onerror = (e) => reject(e.target.error);
+                }
+            });
+        }
+
+        async function seedInitialData() {
+            const count = await runTransaction('students', 'readonly', store => store.count());
+            if (count === 0) {
+                console.log("Seeding initial students...");
+                for (const student of INITIAL_STUDENTS) {
+                    await runTransaction('students', 'readwrite', store => store.put(student));
+                }
+            }
+            
+            const settingsCount = await runTransaction('settings', 'readonly', store => store.count());
+            if (settingsCount === 0) {
+                await runTransaction('settings', 'readwrite', store => store.put({ key: 'schoolName', value: 'SD Negeri Widarapayung Wetan 02' }));
+                await runTransaction('settings', 'readwrite', store => store.put({ key: 'pin', value: '1234' }));
+            }
+        }
+
+        async function loadSettings() {
+            try {
+                const nameRes = await runTransaction('settings', 'readonly', store => store.get('schoolName'));
+                const pinRes = await runTransaction('settings', 'readonly', store => store.get('pin'));
+                if (nameRes) settings.schoolName = nameRes.value;
+                if (pinRes) settings.pin = pinRes.value;
+                
+                document.getElementById('display-school-name').textContent = settings.schoolName;
+                document.getElementById('setting-school-name').value = settings.schoolName;
+            } catch (e) { console.error("Gagal load settings", e); }
+        }
+
+        async function loadAllData() {
+            allStudents = await runTransaction('students', 'readonly', store => store.getAll());
+            // Sort alphabetical just in case
+            allStudents.sort((a, b) => a.name.localeCompare(b.name));
+            
+            todayAttendance = await loadAttendanceByDate(todayStr);
+        }
+
+        async function loadAttendanceByDate(dateStr) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(['attendance'], 'readonly');
+                const store = transaction.objectStore('attendance');
+                const index = store.index('date');
+                const request = index.getAll(IDBKeyRange.only(dateStr));
+                
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        // --- CLOCK CONTROLLER ---
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('clock-time').textContent = formatTime(now);
+            document.getElementById('clock-date').textContent = formatDateFullIndo(now);
+            
+            // Check if day rolled over
+            const newTodayStr = getTodayDateString();
+            if(newTodayStr !== todayStr) {
+                todayStr = newTodayStr;
+                loadAllData().then(updateHomeStats);
+            }
+        }, 1000);
+
+        // --- STREAMING_CHUNK:App Flows and Event Handlers ---
+        
+        async function updateHomeStats() {
+            await loadAllData();
+            const total = allStudents.length;
+            const present = todayAttendance.filter(a => a.status === 'Hadir').length;
+            const recorded = todayAttendance.length;
+            const unrecorded = total - recorded;
+            
+            document.getElementById('home-stat-present').textContent = present;
+            document.getElementById('home-stat-unrecorded').textContent = unrecorded;
+        }
+
+        function startAttendanceFlow() {
+            showScreen('screen-student-selection');
+            document.getElementById('search-student').value = '';
+            filterStudents();
+        }
+
+        function renderStudentGrid(filterText = '') {
+            const grid = document.getElementById('student-grid');
+            grid.innerHTML = '';
+            
+            const lowerFilter = filterText.toLowerCase();
+            const filtered = allStudents.filter(s => s.name.toLowerCase().includes(lowerFilter));
+            
+            filtered.forEach(student => {
+                // Check if already absent today
+                const record = todayAttendance.find(a => a.studentId === student.id);
+                const isRecorded = !!record;
+                let statusBadge = '';
+                let cardClass = 'bg-white border-blue-200 hover:border-blue-400 hover:shadow-xl cursor-pointer';
+                let onclick = `selectStudent('${student.id}')`;
+                
+                if (isRecorded) {
+                    cardClass = 'bg-gray-100 border-gray-300 opacity-60 cursor-not-allowed';
+                    onclick = `showToast('${student.name} sudah tercatat hari ini (${record.status}).', true)`;
+                    let statusColor = record.status === 'Hadir' ? 'text-green-600' : 'text-yellow-600';
+                    if(record.status === 'Alpa') statusColor = 'text-red-600';
+                    statusBadge = `<div class="mt-2 text-sm font-bold ${statusColor} bg-white px-2 py-1 rounded-full"><i class="fas fa-check"></i> ${record.status}</div>`;
+                }
+
+                const cardHTML = `
+                    <div onclick="${onclick}" class="student-card ${cardClass} border-4 rounded-[2rem] p-4 flex flex-col items-center justify-center relative min-h-[160px] shadow-md group">
+                        <div class="absolute -top-4 -left-4 bg-blue-800 text-white font-black rounded-2xl w-14 h-14 flex items-center justify-center text-2xl border-4 border-white shadow-md z-10 group-hover:scale-110 transition-transform">
+                            ${student.no}
+                        </div>
+                        <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-3 text-blue-400 mt-2">
+                            <i class="fas fa-child text-3xl"></i>
+                        </div>
+                        <div class="text-xl sm:text-2xl font-extrabold text-slate-700 text-center leading-tight">${student.name}</div>
+                        ${statusBadge}
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+            
+            if(filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center text-slate-400 text-xl font-bold py-10">Nama tidak ditemukan.</div>`;
+            }
+        }
+
+        function filterStudents() {
+            const val = document.getElementById('search-student').value;
+            renderStudentGrid(val);
+        }
+
+        function selectStudent(id) {
+            const student = allStudents.find(s => s.id === id);
+            if(!student) return;
+            currentTempStudent = student;
+            document.getElementById('confirm-name-display').textContent = student.name;
+            showScreen('screen-confirm-identity');
+        }
+
+        function goToMood() {
+            showScreen('screen-mood');
+        }
+
+        function selectMood(moodText, emoji, bgClass, borderClass) {
+            currentTempMood = { text: moodText, emoji: emoji || '➖' };
+            
+            document.getElementById('final-name').textContent = currentTempStudent.name;
+            const moodContainer = document.getElementById('final-mood-container');
+            
+            // reset classes
+            moodContainer.className = `bg-white p-6 rounded-3xl inline-block shadow-md border-4 mb-12 ${bgClass || ''} ${borderClass || 'border-slate-200'}`;
+            document.getElementById('final-mood-emoji').textContent = currentTempMood.emoji;
+            document.getElementById('final-mood-text').textContent = currentTempMood.text;
+            
+            showScreen('screen-final-confirm');
+        }
+
+        async function submitAttendance() {
+            if(!currentTempStudent) {
+                showToast("Terjadi kesalahan, data siswa hilang.", true);
+                showScreen('screen-home');
+                return;
+            }
+
+            const recordId = `${todayStr}_${currentTempStudent.id}`;
+            
+            // Double check validation
+            const exist = await runTransaction('attendance', 'readonly', store => store.get(recordId));
+            if(exist) {
+                showToast("Data sudah ada!", true);
+                showScreen('screen-home');
+                return;
+            }
+
+            const newRecord = {
+                id: recordId,
+                date: todayStr,
+                studentId: currentTempStudent.id,
+                status: 'Hadir',
+                mood: currentTempMood.text,
+                timestamp: Date.now()
+            };
+
+            try {
+                await runTransaction('attendance', 'readwrite', store => store.put(newRecord));
+                showScreen('screen-success');
+                // Play simple success sound conceptually (browser policies restrict auto-play, so we skip audio file dependency)
+                
+                // Reset temp data
+                currentTempStudent = null;
+                currentTempMood = null;
+                
+                // Auto back to list after 3 seconds
+                setTimeout(() => {
+                    if(document.getElementById('screen-success').classList.contains('active')) {
+                        updateHomeStats();
+                        showScreen('screen-home');
+                    }
+                }, 3000);
+            } catch (err) {
+                showToast("Gagal menyimpan data!", true);
+                console.error(err);
+            }
+        }
+
+        // --- STREAMING_CHUNK:Teacher Panel Logic ---
+        
+        function verifyPin() {
+            const input = document.getElementById('teacher-pin-input').value;
+            if (input === settings.pin) {
+                document.getElementById('teacher-pin-input').value = '';
+                showScreen('screen-teacher-dashboard');
+            } else {
+                showToast('PIN Salah!', true);
+                document.getElementById('teacher-pin-input').value = '';
+            }
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.teacher-tab-content').forEach(el => {
+                el.classList.add('hidden');
+                el.classList.remove('block');
+            });
+            document.querySelectorAll('.teacher-tab-btn').forEach(el => {
+                el.classList.remove('border-blue-500', 'text-blue-600');
+                el.classList.add('border-transparent', 'text-slate-600');
+            });
+            
+            document.getElementById(tabId).classList.remove('hidden');
+            document.getElementById(tabId).classList.add('block');
+            
+            document.getElementById(`btn-${tabId}`).classList.remove('border-transparent', 'text-slate-600');
+            document.getElementById(`btn-${tabId}`).classList.add('border-blue-500', 'text-blue-600');
+        }
+
+        async function renderTeacherDashboard() {
+            document.getElementById('dashboard-date-display').textContent = formatDateFullIndo(new Date());
+            await loadAllData();
+            
+            const total = allStudents.length;
+            let present = 0, izinSakit = 0, alpa = 0;
+            let moodCounts = {};
+
+            const tbody = document.getElementById('teacher-student-list');
+            tbody.innerHTML = '';
+
+            allStudents.forEach(student => {
+                const record = todayAttendance.find(a => a.studentId === student.id);
+                let status = 'Belum Absen';
+                let timeStr = '-';
+                let rowClass = '';
+                
+                if (record) {
+                    status = record.status;
+                    const d = new Date(record.timestamp);
+                    timeStr = formatTime(d);
+                    
+                    if(status === 'Hadir') present++;
+                    else if(status === 'Izin' || status === 'Sakit') izinSakit++;
+                    else if(status === 'Alpa') alpa++;
+
+                    if(record.mood && record.mood !== 'Lewati' && status === 'Hadir') {
+                        moodCounts[record.mood] = (moodCounts[record.mood] || 0) + 1;
+                    }
+                    
+                    if(status === 'Sakit' || status === 'Izin') rowClass = 'bg-yellow-50';
+                    if(status === 'Alpa') rowClass = 'bg-red-50';
+                }
+
+                const statusBadgeColors = {
+                    'Hadir': 'bg-green-100 text-green-700',
+                    'Sakit': 'bg-yellow-100 text-yellow-700',
+                    'Izin': 'bg-yellow-100 text-yellow-700',
+                    'Alpa': 'bg-red-100 text-red-700',
+                    'Belum Absen': 'bg-slate-100 text-slate-500'
+                };
+
+                const tr = `
+                    <tr class="hover:bg-slate-50 ${rowClass}">
+                        <td class="p-4 border-b border-slate-100 font-bold text-center">${student.no}</td>
+                        <td class="p-4 border-b border-slate-100 font-bold text-slate-700">${student.name}</td>
+                        <td class="p-4 border-b border-slate-100">
+                            <span class="px-3 py-1 rounded-full text-sm font-bold ${statusBadgeColors[status]}">${status}</span>
+                            ${record && record.mood ? `<span class="ml-2 text-lg">${MOOD_DATA[record.mood] || ''}</span>` : ''}
+                        </td>
+                        <td class="p-4 border-b border-slate-100 text-sm font-bold text-slate-500">${timeStr}</td>
+                        <td class="p-4 border-b border-slate-100 text-center">
+                            <button onclick="openEditModal('${student.id}', '${status}')" class="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded-lg" title="Edit Status">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', tr);
+            });
+
+            // Update Stats
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-hadir').textContent = present;
+            document.getElementById('stat-izinsakit').textContent = izinSakit;
+            document.getElementById('stat-alpa').textContent = alpa;
+
+            // Update Mood Stats
+            const moodContainer = document.getElementById('mood-stats-container');
+            moodContainer.innerHTML = '';
+            if(Object.keys(moodCounts).length === 0) {
+                moodContainer.innerHTML = '<div class="col-span-full text-slate-400 font-bold">Belum ada data suasana hati.</div>';
+            } else {
+                for (const [mood, count] of Object.entries(moodCounts)) {
+                    moodContainer.innerHTML += `
+                        <div class="bg-white p-3 rounded-lg shadow-sm border border-slate-100 flex items-center gap-3">
+                            <span class="text-3xl">${MOOD_DATA[mood] || ''}</span>
+                            <div>
+                                <div class="text-xs font-bold text-slate-400 uppercase">${mood}</div>
+                                <div class="text-xl font-extrabold text-slate-700">${count} Siswa</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        // --- TEACHER ACTIONS ---
+        function openEditModal(studentId, currentStatus) {
+            editModalStudentId = studentId;
+            const student = allStudents.find(s => s.id === studentId);
+            document.getElementById('edit-modal-student-name').textContent = student.name;
+            document.getElementById('edit-modal-status-select').value = currentStatus === 'Belum Absen' ? '' : currentStatus;
+            document.getElementById('modal-edit-status').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('modal-edit-status').classList.add('hidden');
+            editModalStudentId = null;
+        }
+
+        async function saveEditStatus() {
+            const status = document.getElementById('edit-modal-status-select').value;
+            const recordId = `${todayStr}_${editModalStudentId}`;
+            
+            try {
+                if(status === '') {
+                    // Delete record
+                    await runTransaction('attendance', 'readwrite', store => store.delete(recordId));
+                    showToast("Data absensi dihapus.");
+                } else {
+                    // Update or Add record
+                    const existing = await runTransaction('attendance', 'readonly', store => store.get(recordId));
+                    const newRecord = {
+                        id: recordId,
+                        date: todayStr,
+                        studentId: editModalStudentId,
+                        status: status,
+                        mood: existing ? existing.mood : 'Lewati', // Keep existing mood or default
+                        timestamp: existing ? existing.timestamp : Date.now()
+                    };
+                    await runTransaction('attendance', 'readwrite', store => store.put(newRecord));
+                    showToast("Status berhasil diperbarui.");
+                }
+                closeEditModal();
+                renderTeacherDashboard();
+            } catch (err) {
+                showToast("Gagal menyimpan perubahan.", true);
+            }
+        }
+
+        async function saveSettings() {
+            const newName = document.getElementById('setting-school-name').value.trim();
+            const newPin = document.getElementById('setting-pin').value.trim();
+            
+            if(newName) {
+                await runTransaction('settings', 'readwrite', store => store.put({ key: 'schoolName', value: newName }));
+                settings.schoolName = newName;
+                document.getElementById('display-school-name').textContent = newName;
+            }
+            if(newPin && newPin.length === 4) {
+                await runTransaction('settings', 'readwrite', store => store.put({ key: 'pin', value: newPin }));
+                settings.pin = newPin;
+                document.getElementById('setting-pin').value = '';
+            }
+            showToast("Pengaturan disimpan.");
+        }
+
+        async function resetTodayData() {
+            if(confirm("AWAS! Ini akan menghapus semua data absensi hari ini secara permanen. Lanjutkan?")) {
+                try {
+                    const toDelete = todayAttendance.map(a => a.id);
+                    for(const id of toDelete) {
+                        await runTransaction('attendance', 'readwrite', store => store.delete(id));
+                    }
+                    showToast("Data hari ini direset.");
+                    renderTeacherDashboard();
+                } catch(e) {
+                    showToast("Gagal mereset data.", true);
+                }
+            }
+        }
+
+        // --- STREAMING_CHUNK:Data Export / Import Logic ---
+        
+        async function exportJSON() {
+            try {
+                const students = await runTransaction('students', 'readonly', store => store.getAll());
+                const attendance = await runTransaction('attendance', 'readonly', store => store.getAll());
+                const sets = await runTransaction('settings', 'readonly', store => store.getAll());
+                
+                const backup = {
+                    version: DB_VERSION,
+                    dateExported: new Date().toISOString(),
+                    data: { students, attendance, settings: sets }
+                };
+
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backup));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("download", `Backup_AbsenCeria_${todayStr}.json`);
+                document.body.appendChild(downloadAnchorNode); // required for firefox
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+                showToast("Data berhasil dicadangkan.");
+            } catch (e) {
+                showToast("Gagal mengekspor data.", true);
+            }
+        }
+
+        function importJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if(!confirm("Peringatan: Pemulihan data akan menimpa data yang ada saat ini. Pastikan file JSON valid. Lanjutkan?")) {
+                event.target.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const backup = JSON.parse(e.target.result);
+                    if(!backup.data || !backup.data.students || !backup.data.attendance) throw new Error("Format tidak valid");
+
+                    // Clear existing stores and repopulate
+                    await runTransaction('students', 'readwrite', store => store.clear());
+                    for(const s of backup.data.students) await runTransaction('students', 'readwrite', store => store.put(s));
+                    
+                    await runTransaction('attendance', 'readwrite', store => store.clear());
+                    for(const a of backup.data.attendance) await runTransaction('attendance', 'readwrite', store => store.put(a));
+
+                    if(backup.data.settings) {
+                        for(const set of backup.data.settings) await runTransaction('settings', 'readwrite', store => store.put(set));
+                    }
+
+                    showToast("Pemulihan data sukses! Memuat ulang...");
+                    setTimeout(() => location.reload(), 1500);
+
+                } catch(err) {
+                    showToast("Gagal memulihkan data: File tidak valid.", true);
+                    console.error(err);
+                }
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        async function downloadCSV() {
+            try {
+                let csvContent = "data:text/csv;charset=utf-8,";
+                csvContent += "No,Nama,Status,Suasana Hati,Waktu\n";
+                
+                allStudents.forEach(student => {
+                    const record = todayAttendance.find(a => a.studentId === student.id);
+                    const status = record ? record.status : "Belum Absen";
+                    const mood = record && record.mood ? record.mood : "-";
+                    const time = record ? formatTime(new Date(record.timestamp)) : "-";
+                    
+                    csvContent += `${student.no},"${student.name}","${status}","${mood}",${time}\n`;
+                });
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `Rekap_Absen_${todayStr}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+            } catch (e) {
+                showToast("Gagal mengunduh CSV", true);
+            }
+        }
+
+        // --- INIT ---
+        window.onload = async () => {
+            try {
+                await initDB();
+                updateHomeStats(); // Initial population
+                
+                // Add Enter key listener for PIN
+                document.getElementById('teacher-pin-input').addEventListener('keypress', function (e) {
+                    if (e.key === 'Enter') verifyPin();
+                });
+            } catch (err) {
+                console.error("Initialization Failed:", err);
+                showToast("Gagal inisialisasi penyimpanan lokal. Pastikan browser mendukung IndexedDB.", true);
+            }
+        };
+
+    </script>
+</body>
+</html>
